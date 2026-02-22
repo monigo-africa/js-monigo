@@ -170,6 +170,8 @@ export interface Customer {
   external_id: string
   name: string
   email: string
+  /** Phone number in E.164 international format (e.g. +2348012345678). */
+  phone: string
   /** Arbitrary JSON metadata. */
   metadata: Record<string, unknown> | null
   created_at: string
@@ -180,13 +182,17 @@ export interface CreateCustomerRequest {
   /** Your internal ID for this customer. */
   external_id: string
   name: string
-  email: string
+  email?: string
+  /** Phone number in E.164 international format (e.g. +2348012345678). Optional. */
+  phone?: string
   metadata?: Record<string, unknown>
 }
 
 export interface UpdateCustomerRequest {
   name?: string
   email?: string
+  /** Phone number in E.164 international format (e.g. +2348012345678). Optional. */
+  phone?: string
   metadata?: Record<string, unknown>
 }
 
