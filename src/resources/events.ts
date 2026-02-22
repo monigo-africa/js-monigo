@@ -1,4 +1,5 @@
 import { MonigoClient } from '../client.js'
+import type { MutationOptions } from '../client.js'
 import type {
   IngestRequest,
   IngestResponse,
@@ -33,7 +34,7 @@ export class EventsResource {
    * console.log('Duplicates:', result.duplicates.length)
    * ```
    */
-  async ingest(request: IngestRequest): Promise<IngestResponse> {
+  async ingest(request: IngestRequest, options?: MutationOptions): Promise<IngestResponse> {
     const body = {
       events: request.events.map((e) => ({
         ...e,
@@ -42,7 +43,10 @@ export class EventsResource {
           : new Date().toISOString(),
       })),
     }
-    return this.client._request<IngestResponse>('POST', '/v1/ingest', { body })
+    return this.client._request<IngestResponse>('POST', '/v1/ingest', {
+      body,
+      idempotencyKey: options?.idempotencyKey,
+    })
   }
 
   /**
@@ -64,7 +68,7 @@ export class EventsResource {
    * console.log('Replay job:', job.id, job.status)
    * ```
    */
-  async startReplay(request: StartReplayRequest): Promise<EventReplayJob> {
+  async startReplay(request: StartReplayRequest, options?: MutationOptions): Promise<EventReplayJob> {
     const body = {
       from: MonigoClient.toISOString(request.from),
       to: MonigoClient.toISOString(request.to),
@@ -73,7 +77,7 @@ export class EventsResource {
     const wrapper = await this.client._request<{ job: EventReplayJob }>(
       'POST',
       '/v1/events/replay',
-      { body },
+      { body, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.job
   }

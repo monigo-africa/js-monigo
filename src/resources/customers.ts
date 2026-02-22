@@ -1,4 +1,4 @@
-import type { MonigoClient } from '../client.js'
+import type { MonigoClient, MutationOptions } from '../client.js'
 import type {
   Customer,
   CreateCustomerRequest,
@@ -25,11 +25,11 @@ export class CustomersResource {
    * })
    * ```
    */
-  async create(request: CreateCustomerRequest): Promise<Customer> {
+  async create(request: CreateCustomerRequest, options?: MutationOptions): Promise<Customer> {
     const wrapper = await this.client._request<{ customer: Customer }>(
       'POST',
       '/v1/customers',
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.customer
   }
@@ -72,11 +72,12 @@ export class CustomersResource {
   async update(
     customerId: string,
     request: UpdateCustomerRequest,
+    options?: MutationOptions,
   ): Promise<Customer> {
     const wrapper = await this.client._request<{ customer: Customer }>(
       'PUT',
       `/v1/customers/${customerId}`,
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.customer
   }

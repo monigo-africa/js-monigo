@@ -38,10 +38,23 @@ export interface MonigoClientOptions {
   timeout?: number
 }
 
+/**
+ * Options accepted by every mutating method (POST, PUT, PATCH).
+ */
+export interface MutationOptions {
+  /**
+   * A unique key that prevents the same request from being processed more than
+   * once. Pass a stable value (e.g. a request ID from your own system) to make
+   * retries safe. When omitted, the SDK generates a UUID v4 automatically.
+   */
+  idempotencyKey?: string
+}
+
 /** @internal */
 export interface RequestOptions {
   body?: unknown
   query?: Record<string, string | undefined>
+  idempotencyKey?: string
 }
 
 /**
@@ -145,6 +158,11 @@ export class MonigoClient {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this._timeout)
 
+    const isMutating = method === 'POST' || method === 'PUT' || method === 'PATCH'
+    const idempotencyKey = isMutating
+      ? (options.idempotencyKey ?? globalThis.crypto.randomUUID())
+      : undefined
+
     try {
       const response = await this._fetchFn(url, {
         method,
@@ -152,6 +170,7 @@ export class MonigoClient {
           Authorization: `Bearer ${this._apiKey}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
         },
         body: options.body != null ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,

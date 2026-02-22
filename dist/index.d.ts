@@ -118,7 +118,7 @@ export declare class CustomersResource {
      * })
      * ```
      */
-    create(request: CreateCustomerRequest): Promise<Customer>;
+    create(request: CreateCustomerRequest, options?: MutationOptions): Promise<Customer>;
     /**
      * Return all customers in the authenticated organisation.
      *
@@ -144,7 +144,7 @@ export declare class CustomersResource {
      * })
      * ```
      */
-    update(customerId: string, request: UpdateCustomerRequest): Promise<Customer>;
+    update(customerId: string, request: UpdateCustomerRequest, options?: MutationOptions): Promise<Customer>;
     /**
      * Permanently delete a customer record.
      *
@@ -200,7 +200,7 @@ export declare class EventsResource {
      * console.log('Duplicates:', result.duplicates.length)
      * ```
      */
-    ingest(request: IngestRequest): Promise<IngestResponse>;
+    ingest(request: IngestRequest, options?: MutationOptions): Promise<IngestResponse>;
     /**
      * Start an asynchronous replay of all raw events in a given time window
      * through the current processing pipeline. Useful for backfilling usage
@@ -220,7 +220,7 @@ export declare class EventsResource {
      * console.log('Replay job:', job.id, job.status)
      * ```
      */
-    startReplay(request: StartReplayRequest): Promise<EventReplayJob>;
+    startReplay(request: StartReplayRequest, options?: MutationOptions): Promise<EventReplayJob>;
     /**
      * Fetch the current status and progress of an event replay job.
      *
@@ -334,7 +334,7 @@ export declare class InvoicesResource {
      * console.log('Draft invoice total:', invoice.total)
      * ```
      */
-    generate(subscriptionId: string): Promise<Invoice>;
+    generate(subscriptionId: string, options?: MutationOptions): Promise<Invoice>;
     /**
      * Return invoices, optionally filtered by status or customer.
      *
@@ -361,14 +361,14 @@ export declare class InvoicesResource {
      *
      * **Requires `write` scope.**
      */
-    finalize(invoiceId: string): Promise<Invoice>;
+    finalize(invoiceId: string, options?: MutationOptions): Promise<Invoice>;
     /**
      * Void an invoice, making it permanently non-payable.
      * Only admins and owners can void invoices.
      *
      * **Requires `write` scope.**
      */
-    void(invoiceId: string): Promise<Invoice>;
+    void(invoiceId: string, options?: MutationOptions): Promise<Invoice>;
 }
 
 export declare const InvoiceStatus: {
@@ -460,7 +460,7 @@ export declare class MetricsResource {
      * })
      * ```
      */
-    create(request: CreateMetricRequest): Promise<Metric>;
+    create(request: CreateMetricRequest, options?: MutationOptions): Promise<Metric>;
     /**
      * Return all metrics in the authenticated organisation.
      *
@@ -478,7 +478,7 @@ export declare class MetricsResource {
      *
      * **Requires `write` scope.**
      */
-    update(metricId: string, request: UpdateMetricRequest): Promise<Metric>;
+    update(metricId: string, request: UpdateMetricRequest, options?: MutationOptions): Promise<Metric>;
     /**
      * Permanently delete a metric.
      *
@@ -599,6 +599,18 @@ export declare interface MonigoClientOptions {
     timeout?: number;
 }
 
+/**
+ * Options accepted by every mutating method (POST, PUT, PATCH).
+ */
+export declare interface MutationOptions {
+    /**
+     * A unique key that prevents the same request from being processed more than
+     * once. Pass a stable value (e.g. a request ID from your own system) to make
+     * retries safe. When omitted, the SDK generates a UUID v4 automatically.
+     */
+    idempotencyKey?: string;
+}
+
 /** A bank or mobile-money account that a customer can be paid to. */
 export declare interface PayoutAccount {
     id: string;
@@ -640,7 +652,7 @@ export declare class PayoutAccountsResource {
      * })
      * ```
      */
-    create(customerId: string, request: CreatePayoutAccountRequest): Promise<PayoutAccount>;
+    create(customerId: string, request: CreatePayoutAccountRequest, options?: MutationOptions): Promise<PayoutAccount>;
     /**
      * Return all payout accounts for a customer.
      *
@@ -658,7 +670,7 @@ export declare class PayoutAccountsResource {
      *
      * **Requires `write` scope.**
      */
-    update(customerId: string, accountId: string, request: UpdatePayoutAccountRequest): Promise<PayoutAccount>;
+    update(customerId: string, accountId: string, request: UpdatePayoutAccountRequest, options?: MutationOptions): Promise<PayoutAccount>;
     /**
      * Delete a payout account.
      *
@@ -715,7 +727,7 @@ export declare class PlansResource {
      * })
      * ```
      */
-    create(request: CreatePlanRequest): Promise<Plan>;
+    create(request: CreatePlanRequest, options?: MutationOptions): Promise<Plan>;
     /**
      * Return all billing plans in the authenticated organisation.
      *
@@ -733,7 +745,7 @@ export declare class PlansResource {
      *
      * **Requires `write` scope.**
      */
-    update(planId: string, request: UpdatePlanRequest): Promise<Plan>;
+    update(planId: string, request: UpdatePlanRequest, options?: MutationOptions): Promise<Plan>;
     /**
      * Permanently delete a plan.
      *
@@ -829,7 +841,7 @@ export declare class SubscriptionsResource {
      * })
      * ```
      */
-    create(request: CreateSubscriptionRequest): Promise<Subscription>;
+    create(request: CreateSubscriptionRequest, options?: MutationOptions): Promise<Subscription>;
     /**
      * Return subscriptions, optionally filtered by customer, plan, or status.
      *
@@ -861,7 +873,7 @@ export declare class SubscriptionsResource {
      * await monigo.subscriptions.updateStatus(subId, SubscriptionStatus.Paused)
      * ```
      */
-    updateStatus(subscriptionId: string, status: SubscriptionStatusValue): Promise<Subscription>;
+    updateStatus(subscriptionId: string, status: SubscriptionStatusValue, options?: MutationOptions): Promise<Subscription>;
     /**
      * Cancel and delete a subscription record.
      *

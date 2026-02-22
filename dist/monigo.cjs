@@ -86,14 +86,17 @@ class EventsResource {
    * console.log('Duplicates:', result.duplicates.length)
    * ```
    */
-  async ingest(request) {
+  async ingest(request, options) {
     const body = {
       events: request.events.map((e) => ({
         ...e,
         timestamp: e.timestamp ? MonigoClient.toISOString(e.timestamp) : (/* @__PURE__ */ new Date()).toISOString()
       }))
     };
-    return this.client._request("POST", "/v1/ingest", { body });
+    return this.client._request("POST", "/v1/ingest", {
+      body,
+      idempotencyKey: options?.idempotencyKey
+    });
   }
   /**
    * Start an asynchronous replay of all raw events in a given time window
@@ -114,7 +117,7 @@ class EventsResource {
    * console.log('Replay job:', job.id, job.status)
    * ```
    */
-  async startReplay(request) {
+  async startReplay(request, options) {
     const body = {
       from: MonigoClient.toISOString(request.from),
       to: MonigoClient.toISOString(request.to),
@@ -123,7 +126,7 @@ class EventsResource {
     const wrapper = await this.client._request(
       "POST",
       "/v1/events/replay",
-      { body }
+      { body, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.job;
   }
@@ -167,11 +170,11 @@ class CustomersResource {
    * })
    * ```
    */
-  async create(request) {
+  async create(request, options) {
     const wrapper = await this.client._request(
       "POST",
       "/v1/customers",
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.customer;
   }
@@ -208,11 +211,11 @@ class CustomersResource {
    * })
    * ```
    */
-  async update(customerId, request) {
+  async update(customerId, request, options) {
     const wrapper = await this.client._request(
       "PUT",
       `/v1/customers/${customerId}`,
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.customer;
   }
@@ -243,11 +246,11 @@ class MetricsResource {
    * })
    * ```
    */
-  async create(request) {
+  async create(request, options) {
     const wrapper = await this.client._request(
       "POST",
       "/v1/metrics",
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.metric;
   }
@@ -276,11 +279,11 @@ class MetricsResource {
    *
    * **Requires `write` scope.**
    */
-  async update(metricId, request) {
+  async update(metricId, request, options) {
     const wrapper = await this.client._request(
       "PUT",
       `/v1/metrics/${metricId}`,
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.metric;
   }
@@ -316,11 +319,11 @@ class PlansResource {
    * })
    * ```
    */
-  async create(request) {
+  async create(request, options) {
     const wrapper = await this.client._request(
       "POST",
       "/v1/plans",
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.plan;
   }
@@ -349,11 +352,11 @@ class PlansResource {
    *
    * **Requires `write` scope.**
    */
-  async update(planId, request) {
+  async update(planId, request, options) {
     const wrapper = await this.client._request(
       "PUT",
       `/v1/plans/${planId}`,
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.plan;
   }
@@ -386,11 +389,11 @@ class SubscriptionsResource {
    * })
    * ```
    */
-  async create(request) {
+  async create(request, options) {
     const wrapper = await this.client._request(
       "POST",
       "/v1/subscriptions",
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.subscription;
   }
@@ -439,11 +442,11 @@ class SubscriptionsResource {
    * await monigo.subscriptions.updateStatus(subId, SubscriptionStatus.Paused)
    * ```
    */
-  async updateStatus(subscriptionId, status) {
+  async updateStatus(subscriptionId, status, options) {
     const wrapper = await this.client._request(
       "PATCH",
       `/v1/subscriptions/${subscriptionId}`,
-      { body: { status } }
+      { body: { status }, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.subscription;
   }
@@ -478,11 +481,11 @@ class PayoutAccountsResource {
    * })
    * ```
    */
-  async create(customerId, request) {
+  async create(customerId, request, options) {
     const wrapper = await this.client._request(
       "POST",
       `/v1/customers/${customerId}/payout-accounts`,
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.payout_account;
   }
@@ -514,11 +517,11 @@ class PayoutAccountsResource {
    *
    * **Requires `write` scope.**
    */
-  async update(customerId, accountId, request) {
+  async update(customerId, accountId, request, options) {
     const wrapper = await this.client._request(
       "PUT",
       `/v1/customers/${customerId}/payout-accounts/${accountId}`,
-      { body: request }
+      { body: request, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.payout_account;
   }
@@ -550,11 +553,11 @@ class InvoicesResource {
    * console.log('Draft invoice total:', invoice.total)
    * ```
    */
-  async generate(subscriptionId) {
+  async generate(subscriptionId, options) {
     const wrapper = await this.client._request(
       "POST",
       "/v1/invoices/generate",
-      { body: { subscription_id: subscriptionId } }
+      { body: { subscription_id: subscriptionId }, idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.invoice;
   }
@@ -597,10 +600,11 @@ class InvoicesResource {
    *
    * **Requires `write` scope.**
    */
-  async finalize(invoiceId) {
+  async finalize(invoiceId, options) {
     const wrapper = await this.client._request(
       "POST",
-      `/v1/invoices/${invoiceId}/finalize`
+      `/v1/invoices/${invoiceId}/finalize`,
+      { idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.invoice;
   }
@@ -610,10 +614,11 @@ class InvoicesResource {
    *
    * **Requires `write` scope.**
    */
-  async void(invoiceId) {
+  async void(invoiceId, options) {
     const wrapper = await this.client._request(
       "POST",
-      `/v1/invoices/${invoiceId}/void`
+      `/v1/invoices/${invoiceId}/void`,
+      { idempotencyKey: options?.idempotencyKey }
     );
     return wrapper.invoice;
   }
@@ -702,13 +707,16 @@ class MonigoClient {
     }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this._timeout);
+    const isMutating = method === "POST" || method === "PUT" || method === "PATCH";
+    const idempotencyKey = isMutating ? options.idempotencyKey ?? globalThis.crypto.randomUUID() : void 0;
     try {
       const response = await this._fetchFn(url, {
         method,
         headers: {
           Authorization: `Bearer ${this._apiKey}`,
           "Content-Type": "application/json",
-          Accept: "application/json"
+          Accept: "application/json",
+          ...idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}
         },
         body: options.body != null ? JSON.stringify(options.body) : void 0,
         signal: controller.signal

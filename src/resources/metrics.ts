@@ -1,4 +1,4 @@
-import type { MonigoClient } from '../client.js'
+import type { MonigoClient, MutationOptions } from '../client.js'
 import type {
   Metric,
   CreateMetricRequest,
@@ -24,11 +24,11 @@ export class MetricsResource {
    * })
    * ```
    */
-  async create(request: CreateMetricRequest): Promise<Metric> {
+  async create(request: CreateMetricRequest, options?: MutationOptions): Promise<Metric> {
     const wrapper = await this.client._request<{ metric: Metric }>(
       'POST',
       '/v1/metrics',
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.metric
   }
@@ -60,11 +60,11 @@ export class MetricsResource {
    *
    * **Requires `write` scope.**
    */
-  async update(metricId: string, request: UpdateMetricRequest): Promise<Metric> {
+  async update(metricId: string, request: UpdateMetricRequest, options?: MutationOptions): Promise<Metric> {
     const wrapper = await this.client._request<{ metric: Metric }>(
       'PUT',
       `/v1/metrics/${metricId}`,
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.metric
   }

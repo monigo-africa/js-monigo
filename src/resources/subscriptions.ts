@@ -1,4 +1,4 @@
-import type { MonigoClient } from '../client.js'
+import type { MonigoClient, MutationOptions } from '../client.js'
 import type {
   Subscription,
   CreateSubscriptionRequest,
@@ -27,11 +27,11 @@ export class SubscriptionsResource {
    * })
    * ```
    */
-  async create(request: CreateSubscriptionRequest): Promise<Subscription> {
+  async create(request: CreateSubscriptionRequest, options?: MutationOptions): Promise<Subscription> {
     const wrapper = await this.client._request<{ subscription: Subscription }>(
       'POST',
       '/v1/subscriptions',
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.subscription
   }
@@ -86,11 +86,12 @@ export class SubscriptionsResource {
   async updateStatus(
     subscriptionId: string,
     status: SubscriptionStatusValue,
+    options?: MutationOptions,
   ): Promise<Subscription> {
     const wrapper = await this.client._request<{ subscription: Subscription }>(
       'PATCH',
       `/v1/subscriptions/${subscriptionId}`,
-      { body: { status } },
+      { body: { status }, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.subscription
   }

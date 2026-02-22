@@ -1,4 +1,4 @@
-import type { MonigoClient } from '../client.js'
+import type { MonigoClient, MutationOptions } from '../client.js'
 import type {
   Invoice,
   ListInvoicesParams,
@@ -21,11 +21,11 @@ export class InvoicesResource {
    * console.log('Draft invoice total:', invoice.total)
    * ```
    */
-  async generate(subscriptionId: string): Promise<Invoice> {
+  async generate(subscriptionId: string, options?: MutationOptions): Promise<Invoice> {
     const wrapper = await this.client._request<{ invoice: Invoice }>(
       'POST',
       '/v1/invoices/generate',
-      { body: { subscription_id: subscriptionId } },
+      { body: { subscription_id: subscriptionId }, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.invoice
   }
@@ -71,10 +71,11 @@ export class InvoicesResource {
    *
    * **Requires `write` scope.**
    */
-  async finalize(invoiceId: string): Promise<Invoice> {
+  async finalize(invoiceId: string, options?: MutationOptions): Promise<Invoice> {
     const wrapper = await this.client._request<{ invoice: Invoice }>(
       'POST',
       `/v1/invoices/${invoiceId}/finalize`,
+      { idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.invoice
   }
@@ -85,10 +86,11 @@ export class InvoicesResource {
    *
    * **Requires `write` scope.**
    */
-  async void(invoiceId: string): Promise<Invoice> {
+  async void(invoiceId: string, options?: MutationOptions): Promise<Invoice> {
     const wrapper = await this.client._request<{ invoice: Invoice }>(
       'POST',
       `/v1/invoices/${invoiceId}/void`,
+      { idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.invoice
   }

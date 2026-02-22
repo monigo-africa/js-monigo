@@ -1,6 +1,6 @@
 // Main client
 export { MonigoClient } from './client.js'
-export type { MonigoClientOptions } from './client.js'
+export type { MonigoClientOptions, MutationOptions } from './client.js'
 
 // Error class
 export { MonigoAPIError } from './errors.js'

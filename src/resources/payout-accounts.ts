@@ -1,4 +1,4 @@
-import type { MonigoClient } from '../client.js'
+import type { MonigoClient, MutationOptions } from '../client.js'
 import type {
   PayoutAccount,
   CreatePayoutAccountRequest,
@@ -31,11 +31,12 @@ export class PayoutAccountsResource {
   async create(
     customerId: string,
     request: CreatePayoutAccountRequest,
+    options?: MutationOptions,
   ): Promise<PayoutAccount> {
     const wrapper = await this.client._request<{ payout_account: PayoutAccount }>(
       'POST',
       `/v1/customers/${customerId}/payout-accounts`,
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.payout_account
   }
@@ -74,11 +75,12 @@ export class PayoutAccountsResource {
     customerId: string,
     accountId: string,
     request: UpdatePayoutAccountRequest,
+    options?: MutationOptions,
   ): Promise<PayoutAccount> {
     const wrapper = await this.client._request<{ payout_account: PayoutAccount }>(
       'PUT',
       `/v1/customers/${customerId}/payout-accounts/${accountId}`,
-      { body: request },
+      { body: request, idempotencyKey: options?.idempotencyKey },
     )
     return wrapper.payout_account
   }
