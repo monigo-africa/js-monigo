@@ -1,8 +1,15 @@
 {
   "name": "@monigo/sdk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Official Monigo JavaScript / TypeScript SDK — event ingestion, metering, billing, and usage for browser and Node.js",
-  "keywords": ["monigo", "billing", "metering", "usage", "events", "sdk"],
+  "keywords": [
+    "monigo",
+    "billing",
+    "metering",
+    "usage",
+    "events",
+    "sdk"
+  ],
   "author": "Monigo <dev@monigo.co>",
   "license": "MIT",
   "type": "module",
