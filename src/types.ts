@@ -18,12 +18,19 @@ export type AggregationType = (typeof Aggregation)[keyof typeof Aggregation]
 // =============================================================================
 
 export const PricingModel = {
-  Flat: 'flat',
+  /** Fixed price per unit. Requires `unit_price`. */
+  Flat: 'flat_unit',
+  /** Alias for `Flat`. */
+  PerUnit: 'per_unit',
+  /** Graduated tiers — each unit charged at the rate of the tier it falls into.
+   *  Requires a `PriceTier[]` in the `tiers` field. */
   Tiered: 'tiered',
-  Volume: 'volume',
+  /** Charge per bundle of N units. Partial bundles round up.
+   *  Requires a `PackageConfig` object in the `tiers` field. */
   Package: 'package',
+  /** Flat base fee covers an included quota; per-unit rate beyond it.
+   *  Requires an `OverageConfig` object in the `tiers` field. */
   Overage: 'overage',
-  WeightedTiered: 'weighted_tiered',
 } as const
 
 export type PricingModelType = (typeof PricingModel)[keyof typeof PricingModel]
@@ -251,7 +258,7 @@ export interface ListMetricsResponse {
 // =============================================================================
 
 /**
- * One price step in a tiered/volume/weighted_tiered pricing model.
+ * One step in a `tiered` pricing model.
  * Set `up_to` to `null` for the final (infinite) tier.
  */
 export interface PriceTier {
@@ -260,16 +267,50 @@ export interface PriceTier {
   unit_amount: string
 }
 
+/**
+ * Configuration for the `package` pricing model.
+ * Pass this as the `tiers` field when `model` is `PricingModel.Package`.
+ */
+export interface PackageConfig {
+  /** Number of units per bundle, e.g. `1000` for "1 000 SMS per bundle". */
+  package_size: number
+  /** Price per complete bundle as a decimal string, e.g. `"500.000000"`. */
+  package_price: string
+  /** If `true`, partial bundles are rounded up to the next whole bundle. */
+  round_up_partial_block: boolean
+}
+
+/**
+ * Configuration for the `overage` pricing model.
+ * Pass this as the `tiers` field when `model` is `PricingModel.Overage`.
+ */
+export interface OverageConfig {
+  /** Free quota. Usage at or below this threshold is charged `base_price`. */
+  included_units: number
+  /** Flat fee for usage up to `included_units` as a decimal string.
+   *  Set to `"0.000000"` when there is no base fee. */
+  base_price: string
+  /** Per-unit rate applied to every unit above `included_units`,
+   *  as a decimal string, e.g. `"1.500000"`. */
+  overage_price: string
+}
+
 /** Describes a price to attach when creating a plan. */
 export interface CreatePriceRequest {
   /** UUID of the metric this price is based on. */
   metric_id: string
   /** Pricing model. Use `PricingModel` constants. */
   model: PricingModelType
-  /** Flat price per unit as a decimal string (used for flat/overage/package models). */
+  /** Flat price per unit as a decimal string.
+   *  Required for `PricingModel.Flat` / `PricingModel.PerUnit`. */
   unit_price?: string
-  /** Price tiers for tiered/volume/weighted_tiered models. */
-  tiers?: PriceTier[]
+  /**
+   * Model-specific configuration:
+   * - `PricingModel.Tiered`  → `PriceTier[]`
+   * - `PricingModel.Package` → `PackageConfig`
+   * - `PricingModel.Overage` → `OverageConfig`
+   */
+  tiers?: PriceTier[] | PackageConfig | OverageConfig
 }
 
 /** Describes an updated price. Include `id` to update an existing price; omit to add a new one. */
@@ -278,7 +319,7 @@ export interface UpdatePriceRequest {
   metric_id?: string
   model?: PricingModelType
   unit_price?: string
-  tiers?: PriceTier[]
+  tiers?: PriceTier[] | PackageConfig | OverageConfig
 }
 
 /** A pricing rule attached to a plan. */

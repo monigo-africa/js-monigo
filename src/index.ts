@@ -49,6 +49,8 @@ export type {
   UpdateMetricRequest,
   ListMetricsResponse,
   PriceTier,
+  PackageConfig,
+  OverageConfig,
   CreatePriceRequest,
   UpdatePriceRequest,
   Price,
