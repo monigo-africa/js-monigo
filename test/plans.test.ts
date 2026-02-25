@@ -30,7 +30,7 @@ describe('plans.create', () => {
       name: 'Pro',
       currency: 'NGN',
       billing_period: 'monthly',
-      prices: [{ metric_id: 'metric_1', model: 'flat', unit_price: '2.50' }],
+      prices: [{ metric_id: 'metric_1', model: 'flat_unit', unit_price: '2.50' }],
     })
     expect(capturedMethod).toBe('POST')
     expect(capturedURL).toContain('/v1/plans')

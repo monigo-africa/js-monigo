@@ -23,7 +23,7 @@ export class PlansResource {
    *   billing_period: 'monthly',
    *   prices: [{
    *     metric_id: 'metric_abc',
-   *     model: 'flat',
+   *     model: 'flat_unit',
    *     unit_price: '2.500000',
    *   }],
    * })
