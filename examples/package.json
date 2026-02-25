@@ -15,6 +15,7 @@
     "metering": "tsx metering/index.ts",
     "billing": "tsx billing/index.ts",
     "payouts": "tsx payouts/index.ts",
-    "usage-report": "tsx usage-report/index.ts"
+    "usage-report": "tsx usage-report/index.ts",
+    "pricing-models": "tsx pricing-models/index.ts"
   }
 }
