@@ -1,6 +1,6 @@
 {
   "name": "@monigo/sdk",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Official Monigo JavaScript / TypeScript SDK — event ingestion, metering, billing, and usage for browser and Node.js",
   "keywords": [
     "monigo",

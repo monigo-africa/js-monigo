@@ -7,6 +7,7 @@ import { SubscriptionsResource } from './resources/subscriptions.js'
 import { PayoutAccountsResource } from './resources/payout-accounts.js'
 import { InvoicesResource } from './resources/invoices.js'
 import { UsageResource } from './resources/usage.js'
+import { PortalTokensResource } from './resources/portal-tokens.js'
 
 const DEFAULT_BASE_URL = 'https://api.monigo.co'
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -103,6 +104,8 @@ export class MonigoClient {
   readonly invoices: InvoicesResource
   /** Query aggregated usage rollups per customer and metric. Requires `read` scope. */
   readonly usage: UsageResource
+  /** Manage customer portal access links. Requires `read` / `write` scope. */
+  readonly portalTokens: PortalTokensResource
 
   constructor(options: MonigoClientOptions) {
     if (!options.apiKey) {
@@ -131,6 +134,7 @@ export class MonigoClient {
     this.payoutAccounts = new PayoutAccountsResource(this)
     this.invoices = new InvoicesResource(this)
     this.usage = new UsageResource(this)
+    this.portalTokens = new PortalTokensResource(this)
   }
 
   /**

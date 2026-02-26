@@ -16,6 +16,7 @@
     "billing": "tsx billing/index.ts",
     "payouts": "tsx payouts/index.ts",
     "usage-report": "tsx usage-report/index.ts",
-    "pricing-models": "tsx pricing-models/index.ts"
+    "pricing-models": "tsx pricing-models/index.ts",
+    "portal-tokens": "tsx portal-tokens/index.ts"
   }
 }

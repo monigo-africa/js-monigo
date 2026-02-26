@@ -572,3 +572,49 @@ export interface UsageQueryResult {
   rollups: UsageRollup[]
   count: number
 }
+
+// =============================================================================
+// Portal tokens
+// =============================================================================
+
+/**
+ * A portal token grants an end-customer read-only access to their invoices,
+ * payout slips, subscriptions, and payout accounts in the Monigo hosted portal.
+ */
+export interface PortalToken {
+  id: string
+  org_id: string
+  customer_id: string
+  /** The opaque 64-character hex token embedded in the portal URL. */
+  token: string
+  label: string
+  /** ISO 8601 expiry timestamp, or `null` for a permanent link. */
+  expires_at: string | null
+  /** ISO 8601 revocation timestamp, or `null` if still active. */
+  revoked_at: string | null
+  created_at: string
+  updated_at: string
+  /** Fully-qualified URL to share with the customer, e.g. `https://app.monigo.co/portal/<token>`. */
+  portal_url: string
+}
+
+/** Request body for `portalTokens.create()`. */
+export interface CreatePortalTokenRequest {
+  /**
+   * The `external_id` you assigned this customer when you called
+   * `customers.create()`.
+   */
+  customer_external_id: string
+  /** Optional human-readable label, e.g. `"Main portal link"`. */
+  label?: string
+  /**
+   * Optional RFC 3339 expiry timestamp. Omit to create a permanent link.
+   * Example: `"2027-01-01T00:00:00Z"`
+   */
+  expires_at?: string
+}
+
+export interface ListPortalTokensResponse {
+  tokens: PortalToken[]
+  count: number
+}

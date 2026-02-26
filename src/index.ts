@@ -14,6 +14,7 @@ export { SubscriptionsResource } from './resources/subscriptions.js'
 export { PayoutAccountsResource } from './resources/payout-accounts.js'
 export { InvoicesResource } from './resources/invoices.js'
 export { UsageResource } from './resources/usage.js'
+export { PortalTokensResource } from './resources/portal-tokens.js'
 
 // Constants
 export {
@@ -73,4 +74,7 @@ export type {
   UsageQueryParams,
   UsageRollup,
   UsageQueryResult,
+  PortalToken,
+  CreatePortalTokenRequest,
+  ListPortalTokensResponse,
 } from './types.js'
