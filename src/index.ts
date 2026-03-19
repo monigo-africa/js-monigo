@@ -15,6 +15,7 @@ export { PayoutAccountsResource } from './resources/payout-accounts.js'
 export { InvoicesResource } from './resources/invoices.js'
 export { UsageResource } from './resources/usage.js'
 export { PortalTokensResource } from './resources/portal-tokens.js'
+export { WalletsResource } from './resources/wallets.js'
 
 // Constants
 export {
@@ -25,6 +26,9 @@ export {
   SubscriptionStatus,
   InvoiceStatus,
   PayoutMethod,
+  WalletEntryType,
+  WalletDirection,
+  VirtualAccountProvider,
 } from './types.js'
 
 // Types
@@ -77,4 +81,21 @@ export type {
   PortalToken,
   CreatePortalTokenRequest,
   ListPortalTokensResponse,
+  WalletEntryTypeValue,
+  WalletDirectionValue,
+  VirtualAccountProviderValue,
+  CustomerWallet,
+  VirtualAccount,
+  LedgerEntry,
+  GetOrCreateWalletRequest,
+  CreditWalletRequest,
+  DebitWalletRequest,
+  CreateVirtualAccountRequest,
+  ListWalletsParams,
+  ListTransactionsParams,
+  ListWalletsResponse,
+  WalletWithVirtualAccountsResponse,
+  WalletOperationResponse,
+  ListTransactionsResponse,
+  ListVirtualAccountsResponse,
 } from './types.js'

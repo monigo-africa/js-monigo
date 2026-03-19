@@ -23,7 +23,9 @@ export declare interface CreateCustomerRequest {
     /** Your internal ID for this customer. */
     external_id: string;
     name: string;
-    email: string;
+    email?: string;
+    /** Phone number in E.164 international format (e.g. +2348012345678). Optional. */
+    phone?: string;
     metadata?: Record<string, unknown>;
 }
 
@@ -66,16 +68,38 @@ export declare interface CreatePlanRequest {
     prices?: CreatePriceRequest[];
 }
 
+/** Request body for `portalTokens.create()`. */
+export declare interface CreatePortalTokenRequest {
+    /**
+     * The `external_id` you assigned this customer when you called
+     * `customers.create()`.
+     */
+    customer_external_id: string;
+    /** Optional human-readable label, e.g. `"Main portal link"`. */
+    label?: string;
+    /**
+     * Optional RFC 3339 expiry timestamp. Omit to create a permanent link.
+     * Example: `"2027-01-01T00:00:00Z"`
+     */
+    expires_at?: string;
+}
+
 /** Describes a price to attach when creating a plan. */
 export declare interface CreatePriceRequest {
     /** UUID of the metric this price is based on. */
     metric_id: string;
     /** Pricing model. Use `PricingModel` constants. */
     model: PricingModelType;
-    /** Flat price per unit as a decimal string (used for flat/overage/package models). */
+    /** Flat price per unit as a decimal string.
+     *  Required for `PricingModel.Flat` / `PricingModel.PerUnit`. */
     unit_price?: string;
-    /** Price tiers for tiered/volume/weighted_tiered models. */
-    tiers?: PriceTier[];
+    /**
+     * Model-specific configuration:
+     * - `PricingModel.Tiered`  → `PriceTier[]`
+     * - `PricingModel.Package` → `PackageConfig`
+     * - `PricingModel.Overage` → `OverageConfig`
+     */
+    tiers?: PriceTier[] | PackageConfig | OverageConfig;
 }
 
 export declare interface CreateSubscriptionRequest {
@@ -83,6 +107,28 @@ export declare interface CreateSubscriptionRequest {
     customer_id: string;
     /** UUID of the plan to subscribe the customer to. */
     plan_id: string;
+}
+
+/** Request body for `wallets.createVirtualAccount()`. */
+export declare interface CreateVirtualAccountRequest {
+    /** Use `VirtualAccountProvider` constants. */
+    provider: VirtualAccountProviderValue;
+    currency: string;
+}
+
+/** Request body for `wallets.credit()`. */
+export declare interface CreditWalletRequest {
+    /** Amount as a decimal string, e.g. `"100.50"`. */
+    amount: string;
+    currency: string;
+    description: string;
+    /** Use `WalletEntryType` constants. */
+    entry_type: WalletEntryTypeValue;
+    reference_type: string;
+    reference_id: string;
+    idempotency_key: string;
+    /** Optional provider account UUID for the other side of double entry. */
+    provider_id?: string;
 }
 
 /** An end-customer record in your Monigo organisation. */
@@ -93,6 +139,8 @@ export declare interface Customer {
     external_id: string;
     name: string;
     email: string;
+    /** Phone number in E.164 international format (e.g. +2348012345678). */
+    phone: string;
     /** Arbitrary JSON metadata. */
     metadata: Record<string, unknown> | null;
     created_at: string;
@@ -151,6 +199,33 @@ export declare class CustomersResource {
      * **Requires `write` scope.**
      */
     delete(customerId: string): Promise<void>;
+}
+
+/** A prepaid balance belonging to a single customer. All monetary values are decimal strings. */
+export declare interface CustomerWallet {
+    id: string;
+    customer_id: string;
+    org_id: string;
+    currency: string;
+    /** Current available balance as a decimal string, e.g. `"500.000000"`. */
+    balance: string;
+    /** Balance reserved for pending operations. */
+    reserved_balance: string;
+    created_at: string;
+    updated_at: string;
+}
+
+/** Request body for `wallets.debit()`. */
+export declare interface DebitWalletRequest {
+    /** Amount as a decimal string, e.g. `"50.25"`. */
+    amount: string;
+    currency: string;
+    description: string;
+    /** Use `WalletEntryType` constants. */
+    entry_type: WalletEntryTypeValue;
+    reference_type: string;
+    reference_id: string;
+    idempotency_key: string;
 }
 
 /** Tracks the progress of an asynchronous event replay job. */
@@ -235,6 +310,13 @@ export declare class EventsResource {
      * ```
      */
     getReplay(jobId: string): Promise<EventReplayJob>;
+}
+
+/** Request body for `wallets.getOrCreate()`. */
+export declare interface GetOrCreateWalletRequest {
+    org_id: string;
+    customer_id: string;
+    currency: string;
 }
 
 /** A single usage event sent to the Monigo ingestion pipeline. */
@@ -380,6 +462,32 @@ export declare const InvoiceStatus: {
 
 export declare type InvoiceStatusValue = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
 
+/** One side of a double-entry accounting record. */
+export declare interface LedgerEntry {
+    id: string;
+    org_id: string;
+    transaction_id: string;
+    wallet_id: string | null;
+    /** `customer_wallet`, `provider`, or `revenue`. */
+    account_type: string;
+    account_id: string;
+    /** Use `WalletDirection` constants. */
+    direction: WalletDirectionValue;
+    /** Amount as a decimal string. */
+    amount: string;
+    currency: string;
+    balance_before: string;
+    balance_after: string;
+    description: string;
+    /** Use `WalletEntryType` constants. */
+    entry_type: WalletEntryTypeValue;
+    reference_type: string;
+    reference_id: string;
+    idempotency_key: string;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+}
+
 export declare interface ListCustomersResponse {
     customers: Customer[];
     count: number;
@@ -412,6 +520,11 @@ export declare interface ListPlansResponse {
     count: number;
 }
 
+export declare interface ListPortalTokensResponse {
+    tokens: PortalToken[];
+    count: number;
+}
+
 export declare interface ListSubscriptionsParams {
     /** Filter to a specific customer UUID. */
     customer_id?: string;
@@ -423,6 +536,34 @@ export declare interface ListSubscriptionsParams {
 
 export declare interface ListSubscriptionsResponse {
     subscriptions: Subscription[];
+    count: number;
+}
+
+export declare interface ListTransactionsParams {
+    /** Number of entries to return (1–100). Defaults to 25. */
+    limit?: number;
+    /** Number of entries to skip. Defaults to 0. */
+    offset?: number;
+}
+
+export declare interface ListTransactionsResponse {
+    transactions: LedgerEntry[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
+export declare interface ListVirtualAccountsResponse {
+    virtual_accounts: VirtualAccount[];
+    count: number;
+}
+
+export declare interface ListWalletsParams {
+    org_id: string;
+}
+
+export declare interface ListWalletsResponse {
+    wallets: CustomerWallet[];
     count: number;
 }
 
@@ -566,6 +707,10 @@ export declare class MonigoClient {
     readonly invoices: InvoicesResource;
     /** Query aggregated usage rollups per customer and metric. Requires `read` scope. */
     readonly usage: UsageResource;
+    /** Manage customer portal access links. Requires `read` / `write` scope. */
+    readonly portalTokens: PortalTokensResource;
+    /** Manage customer wallets, balance operations, and virtual accounts. Requires `read` / `write` scope. */
+    readonly wallets: WalletsResource;
     constructor(options: MonigoClientOptions);
     /* Excluded from this release type: _request */
     /** Normalise a `Date | string` value to an ISO 8601 string. */
@@ -609,6 +754,34 @@ export declare interface MutationOptions {
      * retries safe. When omitted, the SDK generates a UUID v4 automatically.
      */
     idempotencyKey?: string;
+}
+
+/**
+ * Configuration for the `overage` pricing model.
+ * Pass this as the `tiers` field when `model` is `PricingModel.Overage`.
+ */
+export declare interface OverageConfig {
+    /** Free quota. Usage at or below this threshold is charged `base_price`. */
+    included_units: number;
+    /** Flat fee for usage up to `included_units` as a decimal string.
+     *  Set to `"0.000000"` when there is no base fee. */
+    base_price: string;
+    /** Per-unit rate applied to every unit above `included_units`,
+     *  as a decimal string, e.g. `"1.500000"`. */
+    overage_price: string;
+}
+
+/**
+ * Configuration for the `package` pricing model.
+ * Pass this as the `tiers` field when `model` is `PricingModel.Package`.
+ */
+export declare interface PackageConfig {
+    /** Number of units per bundle, e.g. `1000` for "1 000 SMS per bundle". */
+    package_size: number;
+    /** Price per complete bundle as a decimal string, e.g. `"500.000000"`. */
+    package_price: string;
+    /** If `true`, partial bundles are rounded up to the next whole bundle. */
+    round_up_partial_block: boolean;
 }
 
 /** A bank or mobile-money account that a customer can be paid to. */
@@ -721,7 +894,7 @@ export declare class PlansResource {
      *   billing_period: 'monthly',
      *   prices: [{
      *     metric_id: 'metric_abc',
-     *     model: 'flat',
+     *     model: 'flat_unit',
      *     unit_price: '2.500000',
      *   }],
      * })
@@ -761,6 +934,77 @@ export declare const PlanType: {
 
 export declare type PlanTypeValue = (typeof PlanType)[keyof typeof PlanType];
 
+/**
+ * A portal token grants an end-customer read-only access to their invoices,
+ * payout slips, subscriptions, and payout accounts in the Monigo hosted portal.
+ */
+export declare interface PortalToken {
+    id: string;
+    org_id: string;
+    customer_id: string;
+    /** The opaque 64-character hex token embedded in the portal URL. */
+    token: string;
+    label: string;
+    /** ISO 8601 expiry timestamp, or `null` for a permanent link. */
+    expires_at: string | null;
+    /** ISO 8601 revocation timestamp, or `null` if still active. */
+    revoked_at: string | null;
+    created_at: string;
+    updated_at: string;
+    /** Fully-qualified URL to share with the customer, e.g. `https://app.monigo.co/portal/<token>`. */
+    portal_url: string;
+}
+
+/**
+ * Manage customer portal access links.
+ *
+ * Portal tokens grant an end-customer read-only access to their invoices,
+ * payout slips, subscriptions, and payout accounts in the Monigo hosted portal.
+ * All operations require a write-scoped API key; the organisation is inferred
+ * automatically from the key.
+ */
+export declare class PortalTokensResource {
+    private readonly client;
+    constructor(client: MonigoClient);
+    /**
+     * Generate a new portal link for a customer.
+     *
+     * **Requires `write` scope.**
+     *
+     * The returned `portal_url` is what you share with your customer — embed it
+     * in an email, open it in an iframe, or redirect the browser to it directly.
+     *
+     * @example
+     * ```ts
+     * const { portal_url } = await monigo.portalTokens.create({
+     *   customer_external_id: 'usr_abc123',
+     *   label: 'March 2026 invoice link',
+     * })
+     * await sendEmail(customer.email, { portalLink: portal_url })
+     * ```
+     */
+    create(request: CreatePortalTokenRequest, options?: MutationOptions): Promise<PortalToken>;
+    /**
+     * List all portal tokens for a customer.
+     *
+     * **Requires `read` scope.**
+     *
+     * @param customerId - The customer's Monigo UUID or their `external_id`.
+     */
+    list(customerId: string): Promise<ListPortalTokensResponse>;
+    /**
+     * Immediately revoke a portal token.
+     *
+     * **Requires `write` scope.**
+     *
+     * Any customer holding the corresponding URL will receive a 401 on their
+     * next request. This action is irreversible.
+     *
+     * @param tokenId - The UUID of the portal token record (not the raw token string).
+     */
+    revoke(tokenId: string, options?: MutationOptions): Promise<void>;
+}
+
 /** A pricing rule attached to a plan. */
 export declare interface Price {
     id: string;
@@ -774,7 +1018,7 @@ export declare interface Price {
 }
 
 /**
- * One price step in a tiered/volume/weighted_tiered pricing model.
+ * One step in a `tiered` pricing model.
  * Set `up_to` to `null` for the final (infinite) tier.
  */
 export declare interface PriceTier {
@@ -784,12 +1028,19 @@ export declare interface PriceTier {
 }
 
 export declare const PricingModel: {
-    readonly Flat: "flat";
+    /** Fixed price per unit. Requires `unit_price`. */
+    readonly Flat: "flat_unit";
+    /** Alias for `Flat`. */
+    readonly PerUnit: "per_unit";
+    /** Graduated tiers — each unit charged at the rate of the tier it falls into.
+     *  Requires a `PriceTier[]` in the `tiers` field. */
     readonly Tiered: "tiered";
-    readonly Volume: "volume";
+    /** Charge per bundle of N units. Partial bundles round up.
+     *  Requires a `PackageConfig` object in the `tiers` field. */
     readonly Package: "package";
+    /** Flat base fee covers an included quota; per-unit rate beyond it.
+     *  Requires an `OverageConfig` object in the `tiers` field. */
     readonly Overage: "overage";
-    readonly WeightedTiered: "weighted_tiered";
 };
 
 export declare type PricingModelType = (typeof PricingModel)[keyof typeof PricingModel];
@@ -893,6 +1144,8 @@ export declare type SubscriptionStatusValue = (typeof SubscriptionStatus)[keyof 
 export declare interface UpdateCustomerRequest {
     name?: string;
     email?: string;
+    /** Phone number in E.164 international format (e.g. +2348012345678). Optional. */
+    phone?: string;
     metadata?: Record<string, unknown>;
 }
 
@@ -929,7 +1182,7 @@ export declare interface UpdatePriceRequest {
     metric_id?: string;
     model?: PricingModelType;
     unit_price?: string;
-    tiers?: PriceTier[];
+    tiers?: PriceTier[] | PackageConfig | OverageConfig;
 }
 
 export declare interface UsageQueryParams {
@@ -999,6 +1252,129 @@ export declare interface UsageRollup {
     is_test: boolean;
     created_at: string;
     updated_at: string;
+}
+
+/** A dedicated virtual bank account that funds a customer wallet. */
+export declare interface VirtualAccount {
+    id: string;
+    customer_id: string;
+    wallet_id: string;
+    org_id: string;
+    /** Payment provider. Use `VirtualAccountProvider` constants. */
+    provider: VirtualAccountProviderValue;
+    account_number: string;
+    account_name: string;
+    bank_name: string;
+    bank_code: string;
+    currency: string;
+    provider_ref: string;
+    is_active: boolean;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export declare const VirtualAccountProvider: {
+    readonly Paystack: "paystack";
+    readonly Flutterwave: "flutterwave";
+    readonly Monnify: "monnify";
+};
+
+export declare type VirtualAccountProviderValue = (typeof VirtualAccountProvider)[keyof typeof VirtualAccountProvider];
+
+export declare const WalletDirection: {
+    /** Reduces the wallet balance. */
+    readonly Debit: "debit";
+    /** Increases the wallet balance. */
+    readonly Credit: "credit";
+};
+
+export declare type WalletDirectionValue = (typeof WalletDirection)[keyof typeof WalletDirection];
+
+export declare const WalletEntryType: {
+    /** Credit from an external funding source. */
+    readonly Deposit: "deposit";
+    /** Debit to an external destination. */
+    readonly Withdrawal: "withdrawal";
+    /** Automatic debit for metered usage charges. */
+    readonly Usage: "usage";
+    /** Credit reversing a previous charge. */
+    readonly Refund: "refund";
+    /** Manual balance correction. */
+    readonly Adjustment: "adjustment";
+};
+
+export declare type WalletEntryTypeValue = (typeof WalletEntryType)[keyof typeof WalletEntryType];
+
+export declare interface WalletOperationResponse {
+    wallet: CustomerWallet;
+    ledger_entries: LedgerEntry[];
+}
+
+/** Manage customer wallets, balance operations, and virtual accounts. */
+export declare class WalletsResource {
+    private readonly client;
+    constructor(client: MonigoClient);
+    /**
+     * Get an existing wallet or create a new one for the given customer and currency.
+     *
+     * **Requires `write` scope.**
+     */
+    getOrCreate(request: GetOrCreateWalletRequest, options?: MutationOptions): Promise<CustomerWallet>;
+    /**
+     * List all wallets for an organisation.
+     *
+     * **Requires `read` scope.**
+     */
+    list(params: ListWalletsParams): Promise<ListWalletsResponse>;
+    /**
+     * List all wallets belonging to a specific customer.
+     *
+     * **Requires `read` scope.**
+     */
+    listByCustomer(customerId: string): Promise<ListWalletsResponse>;
+    /**
+     * Fetch a single wallet by UUID, including its virtual accounts.
+     *
+     * **Requires `read` scope.**
+     */
+    get(walletId: string): Promise<WalletWithVirtualAccountsResponse>;
+    /**
+     * Credit (add funds to) a wallet. Returns the updated wallet and ledger entries.
+     *
+     * **Requires `write` scope.**
+     */
+    credit(walletId: string, request: CreditWalletRequest, options?: MutationOptions): Promise<WalletOperationResponse>;
+    /**
+     * Debit (remove funds from) a wallet. Returns the updated wallet and ledger entries.
+     * Throws a 402 error if the wallet has insufficient balance.
+     *
+     * **Requires `write` scope.**
+     */
+    debit(walletId: string, request: DebitWalletRequest, options?: MutationOptions): Promise<WalletOperationResponse>;
+    /**
+     * List paginated ledger entries (transactions) for a wallet.
+     *
+     * **Requires `read` scope.**
+     */
+    listTransactions(walletId: string, params?: ListTransactionsParams): Promise<ListTransactionsResponse>;
+    /**
+     * Create a dedicated virtual bank account that automatically funds the wallet on deposit.
+     *
+     * **Requires `write` scope.**
+     */
+    createVirtualAccount(walletId: string, request: CreateVirtualAccountRequest, options?: MutationOptions): Promise<VirtualAccount>;
+    /**
+     * List all virtual accounts linked to a wallet.
+     *
+     * **Requires `read` scope.**
+     */
+    listVirtualAccounts(walletId: string): Promise<ListVirtualAccountsResponse>;
+}
+
+export declare interface WalletWithVirtualAccountsResponse {
+    wallet: CustomerWallet;
+    virtual_accounts: VirtualAccount[];
 }
 
 export { }

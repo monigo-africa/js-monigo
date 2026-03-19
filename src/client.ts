@@ -8,6 +8,7 @@ import { PayoutAccountsResource } from './resources/payout-accounts.js'
 import { InvoicesResource } from './resources/invoices.js'
 import { UsageResource } from './resources/usage.js'
 import { PortalTokensResource } from './resources/portal-tokens.js'
+import { WalletsResource } from './resources/wallets.js'
 
 const DEFAULT_BASE_URL = 'https://api.monigo.co'
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -106,6 +107,8 @@ export class MonigoClient {
   readonly usage: UsageResource
   /** Manage customer portal access links. Requires `read` / `write` scope. */
   readonly portalTokens: PortalTokensResource
+  /** Manage customer wallets, balance operations, and virtual accounts. Requires `read` / `write` scope. */
+  readonly wallets: WalletsResource
 
   constructor(options: MonigoClientOptions) {
     if (!options.apiKey) {
@@ -135,6 +138,7 @@ export class MonigoClient {
     this.invoices = new InvoicesResource(this)
     this.usage = new UsageResource(this)
     this.portalTokens = new PortalTokensResource(this)
+    this.wallets = new WalletsResource(this)
   }
 
   /**

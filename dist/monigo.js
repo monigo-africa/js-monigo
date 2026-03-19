@@ -311,7 +311,7 @@ class PlansResource {
    *   billing_period: 'monthly',
    *   prices: [{
    *     metric_id: 'metric_abc',
-   *     model: 'flat',
+   *     model: 'flat_unit',
    *     unit_price: '2.500000',
    *   }],
    * })
@@ -661,6 +661,183 @@ class UsageResource {
     return this.client._request("GET", "/v1/usage", { query });
   }
 }
+class PortalTokensResource {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Generate a new portal link for a customer.
+   *
+   * **Requires `write` scope.**
+   *
+   * The returned `portal_url` is what you share with your customer — embed it
+   * in an email, open it in an iframe, or redirect the browser to it directly.
+   *
+   * @example
+   * ```ts
+   * const { portal_url } = await monigo.portalTokens.create({
+   *   customer_external_id: 'usr_abc123',
+   *   label: 'March 2026 invoice link',
+   * })
+   * await sendEmail(customer.email, { portalLink: portal_url })
+   * ```
+   */
+  async create(request, options) {
+    const wrapper = await this.client._request(
+      "POST",
+      "/v1/portal/tokens",
+      { body: request, idempotencyKey: options?.idempotencyKey }
+    );
+    return wrapper.token;
+  }
+  /**
+   * List all portal tokens for a customer.
+   *
+   * **Requires `read` scope.**
+   *
+   * @param customerId - The customer's Monigo UUID or their `external_id`.
+   */
+  async list(customerId) {
+    return this.client._request(
+      "GET",
+      "/v1/portal/tokens",
+      { query: { customer_id: customerId } }
+    );
+  }
+  /**
+   * Immediately revoke a portal token.
+   *
+   * **Requires `write` scope.**
+   *
+   * Any customer holding the corresponding URL will receive a 401 on their
+   * next request. This action is irreversible.
+   *
+   * @param tokenId - The UUID of the portal token record (not the raw token string).
+   */
+  async revoke(tokenId, options) {
+    await this.client._request(
+      "DELETE",
+      `/v1/portal/tokens/${tokenId}`,
+      { idempotencyKey: options?.idempotencyKey }
+    );
+  }
+}
+class WalletsResource {
+  constructor(client) {
+    this.client = client;
+  }
+  /**
+   * Get an existing wallet or create a new one for the given customer and currency.
+   *
+   * **Requires `write` scope.**
+   */
+  async getOrCreate(request, options) {
+    const wrapper = await this.client._request(
+      "POST",
+      "/v1/wallets",
+      { body: request, idempotencyKey: options?.idempotencyKey }
+    );
+    return wrapper.wallet;
+  }
+  /**
+   * List all wallets for an organisation.
+   *
+   * **Requires `read` scope.**
+   */
+  async list(params) {
+    return this.client._request("GET", "/v1/wallets", {
+      query: { org_id: params.org_id }
+    });
+  }
+  /**
+   * List all wallets belonging to a specific customer.
+   *
+   * **Requires `read` scope.**
+   */
+  async listByCustomer(customerId) {
+    return this.client._request(
+      "GET",
+      `/v1/customers/${customerId}/wallets`
+    );
+  }
+  /**
+   * Fetch a single wallet by UUID, including its virtual accounts.
+   *
+   * **Requires `read` scope.**
+   */
+  async get(walletId) {
+    return this.client._request(
+      "GET",
+      `/v1/wallets/${walletId}`
+    );
+  }
+  /**
+   * Credit (add funds to) a wallet. Returns the updated wallet and ledger entries.
+   *
+   * **Requires `write` scope.**
+   */
+  async credit(walletId, request, options) {
+    return this.client._request(
+      "POST",
+      `/v1/wallets/${walletId}/credit`,
+      { body: request, idempotencyKey: options?.idempotencyKey }
+    );
+  }
+  /**
+   * Debit (remove funds from) a wallet. Returns the updated wallet and ledger entries.
+   * Throws a 402 error if the wallet has insufficient balance.
+   *
+   * **Requires `write` scope.**
+   */
+  async debit(walletId, request, options) {
+    return this.client._request(
+      "POST",
+      `/v1/wallets/${walletId}/debit`,
+      { body: request, idempotencyKey: options?.idempotencyKey }
+    );
+  }
+  /**
+   * List paginated ledger entries (transactions) for a wallet.
+   *
+   * **Requires `read` scope.**
+   */
+  async listTransactions(walletId, params) {
+    return this.client._request(
+      "GET",
+      `/v1/wallets/${walletId}/transactions`,
+      {
+        query: {
+          limit: params?.limit?.toString(),
+          offset: params?.offset?.toString()
+        }
+      }
+    );
+  }
+  /**
+   * Create a dedicated virtual bank account that automatically funds the wallet on deposit.
+   *
+   * **Requires `write` scope.**
+   */
+  async createVirtualAccount(walletId, request, options) {
+    const wrapper = await this.client._request(
+      "POST",
+      `/v1/wallets/${walletId}/virtual-accounts`,
+      { body: request, idempotencyKey: options?.idempotencyKey }
+    );
+    return wrapper.virtual_account;
+  }
+  /**
+   * List all virtual accounts linked to a wallet.
+   *
+   * **Requires `read` scope.**
+   */
+  async listVirtualAccounts(walletId) {
+    return this.client._request(
+      "GET",
+      `/v1/wallets/${walletId}/virtual-accounts`
+    );
+  }
+}
 const DEFAULT_BASE_URL = "https://api.monigo.co";
 const DEFAULT_TIMEOUT_MS = 3e4;
 class MonigoClient {
@@ -686,6 +863,8 @@ class MonigoClient {
     this.payoutAccounts = new PayoutAccountsResource(this);
     this.invoices = new InvoicesResource(this);
     this.usage = new UsageResource(this);
+    this.portalTokens = new PortalTokensResource(this);
+    this.wallets = new WalletsResource(this);
   }
   /**
    * Execute an authenticated HTTP request against the Monigo API.
@@ -759,12 +938,19 @@ const Aggregation = {
   Unique: "unique"
 };
 const PricingModel = {
-  Flat: "flat",
+  /** Fixed price per unit. Requires `unit_price`. */
+  Flat: "flat_unit",
+  /** Alias for `Flat`. */
+  PerUnit: "per_unit",
+  /** Graduated tiers — each unit charged at the rate of the tier it falls into.
+   *  Requires a `PriceTier[]` in the `tiers` field. */
   Tiered: "tiered",
-  Volume: "volume",
+  /** Charge per bundle of N units. Partial bundles round up.
+   *  Requires a `PackageConfig` object in the `tiers` field. */
   Package: "package",
-  Overage: "overage",
-  WeightedTiered: "weighted_tiered"
+  /** Flat base fee covers an included quota; per-unit rate beyond it.
+   *  Requires an `OverageConfig` object in the `tiers` field. */
+  Overage: "overage"
 };
 const PlanType = {
   Collection: "collection",
@@ -792,6 +978,29 @@ const PayoutMethod = {
   BankTransfer: "bank_transfer",
   MobileMoney: "mobile_money"
 };
+const WalletEntryType = {
+  /** Credit from an external funding source. */
+  Deposit: "deposit",
+  /** Debit to an external destination. */
+  Withdrawal: "withdrawal",
+  /** Automatic debit for metered usage charges. */
+  Usage: "usage",
+  /** Credit reversing a previous charge. */
+  Refund: "refund",
+  /** Manual balance correction. */
+  Adjustment: "adjustment"
+};
+const WalletDirection = {
+  /** Reduces the wallet balance. */
+  Debit: "debit",
+  /** Increases the wallet balance. */
+  Credit: "credit"
+};
+const VirtualAccountProvider = {
+  Paystack: "paystack",
+  Flutterwave: "flutterwave",
+  Monnify: "monnify"
+};
 export {
   Aggregation,
   BillingPeriod,
@@ -806,9 +1015,14 @@ export {
   PayoutMethod,
   PlanType,
   PlansResource,
+  PortalTokensResource,
   PricingModel,
   SubscriptionStatus,
   SubscriptionsResource,
-  UsageResource
+  UsageResource,
+  VirtualAccountProvider,
+  WalletDirection,
+  WalletEntryType,
+  WalletsResource
 };
 //# sourceMappingURL=monigo.js.map

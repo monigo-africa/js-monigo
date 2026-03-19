@@ -93,6 +93,186 @@ export const PayoutMethod = {
 export type PayoutMethodValue = (typeof PayoutMethod)[keyof typeof PayoutMethod]
 
 // =============================================================================
+// Wallet constants
+// =============================================================================
+
+export const WalletEntryType = {
+  /** Credit from an external funding source. */
+  Deposit: 'deposit',
+  /** Debit to an external destination. */
+  Withdrawal: 'withdrawal',
+  /** Automatic debit for metered usage charges. */
+  Usage: 'usage',
+  /** Credit reversing a previous charge. */
+  Refund: 'refund',
+  /** Manual balance correction. */
+  Adjustment: 'adjustment',
+} as const
+
+export type WalletEntryTypeValue = (typeof WalletEntryType)[keyof typeof WalletEntryType]
+
+export const WalletDirection = {
+  /** Reduces the wallet balance. */
+  Debit: 'debit',
+  /** Increases the wallet balance. */
+  Credit: 'credit',
+} as const
+
+export type WalletDirectionValue = (typeof WalletDirection)[keyof typeof WalletDirection]
+
+export const VirtualAccountProvider = {
+  Paystack: 'paystack',
+  Flutterwave: 'flutterwave',
+  Monnify: 'monnify',
+} as const
+
+export type VirtualAccountProviderValue = (typeof VirtualAccountProvider)[keyof typeof VirtualAccountProvider]
+
+// =============================================================================
+// Wallets
+// =============================================================================
+
+/** A prepaid balance belonging to a single customer. All monetary values are decimal strings. */
+export interface CustomerWallet {
+  id: string
+  customer_id: string
+  org_id: string
+  currency: string
+  /** Current available balance as a decimal string, e.g. `"500.000000"`. */
+  balance: string
+  /** Balance reserved for pending operations. */
+  reserved_balance: string
+  created_at: string
+  updated_at: string
+}
+
+/** A dedicated virtual bank account that funds a customer wallet. */
+export interface VirtualAccount {
+  id: string
+  customer_id: string
+  wallet_id: string
+  org_id: string
+  /** Payment provider. Use `VirtualAccountProvider` constants. */
+  provider: VirtualAccountProviderValue
+  account_number: string
+  account_name: string
+  bank_name: string
+  bank_code: string
+  currency: string
+  provider_ref: string
+  is_active: boolean
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+/** One side of a double-entry accounting record. */
+export interface LedgerEntry {
+  id: string
+  org_id: string
+  transaction_id: string
+  wallet_id: string | null
+  /** `customer_wallet`, `provider`, or `revenue`. */
+  account_type: string
+  account_id: string
+  /** Use `WalletDirection` constants. */
+  direction: WalletDirectionValue
+  /** Amount as a decimal string. */
+  amount: string
+  currency: string
+  balance_before: string
+  balance_after: string
+  description: string
+  /** Use `WalletEntryType` constants. */
+  entry_type: WalletEntryTypeValue
+  reference_type: string
+  reference_id: string
+  idempotency_key: string
+  metadata: Record<string, unknown> | null
+  created_at: string
+}
+
+/** Request body for `wallets.getOrCreate()`. */
+export interface GetOrCreateWalletRequest {
+  org_id: string
+  customer_id: string
+  currency: string
+}
+
+/** Request body for `wallets.credit()`. */
+export interface CreditWalletRequest {
+  /** Amount as a decimal string, e.g. `"100.50"`. */
+  amount: string
+  currency: string
+  description: string
+  /** Use `WalletEntryType` constants. */
+  entry_type: WalletEntryTypeValue
+  reference_type: string
+  reference_id: string
+  idempotency_key: string
+  /** Optional provider account UUID for the other side of double entry. */
+  provider_id?: string
+}
+
+/** Request body for `wallets.debit()`. */
+export interface DebitWalletRequest {
+  /** Amount as a decimal string, e.g. `"50.25"`. */
+  amount: string
+  currency: string
+  description: string
+  /** Use `WalletEntryType` constants. */
+  entry_type: WalletEntryTypeValue
+  reference_type: string
+  reference_id: string
+  idempotency_key: string
+}
+
+/** Request body for `wallets.createVirtualAccount()`. */
+export interface CreateVirtualAccountRequest {
+  /** Use `VirtualAccountProvider` constants. */
+  provider: VirtualAccountProviderValue
+  currency: string
+}
+
+export interface ListWalletsParams {
+  org_id: string
+}
+
+export interface ListTransactionsParams {
+  /** Number of entries to return (1–100). Defaults to 25. */
+  limit?: number
+  /** Number of entries to skip. Defaults to 0. */
+  offset?: number
+}
+
+export interface ListWalletsResponse {
+  wallets: CustomerWallet[]
+  count: number
+}
+
+export interface WalletWithVirtualAccountsResponse {
+  wallet: CustomerWallet
+  virtual_accounts: VirtualAccount[]
+}
+
+export interface WalletOperationResponse {
+  wallet: CustomerWallet
+  ledger_entries: LedgerEntry[]
+}
+
+export interface ListTransactionsResponse {
+  transactions: LedgerEntry[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface ListVirtualAccountsResponse {
+  virtual_accounts: VirtualAccount[]
+  count: number
+}
+
+// =============================================================================
 // Events
 // =============================================================================
 
