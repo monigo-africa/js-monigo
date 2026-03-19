@@ -37,13 +37,15 @@ export class WalletsResource {
   }
 
   /**
-   * List all wallets for an organisation.
+   * List all wallets for the organisation. Optionally filter by customer.
    *
    * **Requires `read` scope.**
    */
-  async list(params: ListWalletsParams): Promise<ListWalletsResponse> {
+  async list(params?: ListWalletsParams): Promise<ListWalletsResponse> {
     return this.client._request<ListWalletsResponse>('GET', '/v1/wallets', {
-      query: { org_id: params.org_id },
+      query: {
+        customer_id: params?.customer_id,
+      },
     })
   }
 

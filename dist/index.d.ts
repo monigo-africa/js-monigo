@@ -314,7 +314,6 @@ export declare class EventsResource {
 
 /** Request body for `wallets.getOrCreate()`. */
 export declare interface GetOrCreateWalletRequest {
-    org_id: string;
     customer_id: string;
     currency: string;
 }
@@ -558,8 +557,10 @@ export declare interface ListVirtualAccountsResponse {
     count: number;
 }
 
+/** Optional query parameters for `wallets.list()`. */
 export declare interface ListWalletsParams {
-    org_id: string;
+    /** Filter wallets to a specific customer UUID or external_id. */
+    customer_id?: string;
 }
 
 export declare interface ListWalletsResponse {
@@ -1322,11 +1323,11 @@ export declare class WalletsResource {
      */
     getOrCreate(request: GetOrCreateWalletRequest, options?: MutationOptions): Promise<CustomerWallet>;
     /**
-     * List all wallets for an organisation.
+     * List all wallets for the organisation. Optionally filter by customer.
      *
      * **Requires `read` scope.**
      */
-    list(params: ListWalletsParams): Promise<ListWalletsResponse>;
+    list(params?: ListWalletsParams): Promise<ListWalletsResponse>;
     /**
      * List all wallets belonging to a specific customer.
      *

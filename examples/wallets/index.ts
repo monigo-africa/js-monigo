@@ -49,7 +49,6 @@ try {
   // ---------------------------------------------------------------------------
   console.log('→ Getting or creating wallet...')
   const wallet = await client.wallets.getOrCreate({
-    org_id: '', // will be inferred from API key
     customer_id: customerId,
     currency: 'NGN',
   })

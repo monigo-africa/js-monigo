@@ -71,7 +71,6 @@ describe('wallets.getOrCreate', () => {
       return jsonResponse({ wallet: WALLET })
     })
     const result = await client.wallets.getOrCreate({
-      org_id: 'org_1',
       customer_id: 'cust_1',
       currency: 'NGN',
     })
@@ -83,17 +82,29 @@ describe('wallets.getOrCreate', () => {
 })
 
 describe('wallets.list', () => {
-  it('gets /v1/wallets with org_id query param', async () => {
+  it('gets /v1/wallets with no params', async () => {
     let capturedURL = ''
     const listResponse: ListWalletsResponse = { wallets: [WALLET], count: 1 }
     const client = mockClient((url) => {
       capturedURL = url
       return jsonResponse(listResponse)
     })
-    const result = await client.wallets.list({ org_id: 'org_1' })
-    expect(capturedURL).toContain('org_id=org_1')
+    const result = await client.wallets.list()
+    expect(capturedURL).toContain('/v1/wallets')
     expect(result.wallets).toHaveLength(1)
     expect(result.count).toBe(1)
+  })
+
+  it('gets /v1/wallets with customer_id filter', async () => {
+    let capturedURL = ''
+    const listResponse: ListWalletsResponse = { wallets: [WALLET], count: 1 }
+    const client = mockClient((url) => {
+      capturedURL = url
+      return jsonResponse(listResponse)
+    })
+    const result = await client.wallets.list({ customer_id: 'cust_1' })
+    expect(capturedURL).toContain('customer_id=cust_1')
+    expect(result.wallets).toHaveLength(1)
   })
 })
 

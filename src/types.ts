@@ -194,7 +194,6 @@ export interface LedgerEntry {
 
 /** Request body for `wallets.getOrCreate()`. */
 export interface GetOrCreateWalletRequest {
-  org_id: string
   customer_id: string
   currency: string
 }
@@ -234,8 +233,10 @@ export interface CreateVirtualAccountRequest {
   currency: string
 }
 
+/** Optional query parameters for `wallets.list()`. */
 export interface ListWalletsParams {
-  org_id: string
+  /** Filter wallets to a specific customer UUID or external_id. */
+  customer_id?: string
 }
 
 export interface ListTransactionsParams {
